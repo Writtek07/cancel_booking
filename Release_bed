@@ -1,0 +1,13 @@
+emails = "mrsarath83@gmail.com"
+u = User.where(:email => emails).last
+p = u.profile
+th = p.tenancy_histories.last
+comment = "01344691"
+
+reason = MoveOutReasons::CancelBooking.new.key
+@move_request = MoveRequest.send("create_#{reason.downcase}_moveout", th, comment: comment, created_by: "nitesh@nestaway.com")
+
+Workers::MoveOutWorker.new.perform(@move_request.id, nil, nil, nil, false)
+           MoveRequest.cancel_movein_for_tenancy(@move_request.tenancy_history_id)
+
+           Workers::MoveOutCaseWorker.perform_async('create_move_out_case_in_salesforce', @move_request.id)
